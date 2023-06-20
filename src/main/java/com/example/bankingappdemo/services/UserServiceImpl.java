@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -26,6 +27,8 @@ public class UserServiceImpl implements UserService{
 
 
     private final UserRepository userRepository;
+
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -55,6 +58,7 @@ public class UserServiceImpl implements UserService{
         user.setAccountNumber(accountUtils.createAccountNo());
         user.setAccountBalance(BigDecimal.ZERO);
         user.setStatus(Status.ACTIVE);
+        user.setEncryptedPassword(bCryptPasswordEncoder.encode(userRequest.getPassword()));
         log.info(user.getAccountNumber());
 
 
@@ -128,6 +132,17 @@ public class UserServiceImpl implements UserService{
 
             foundUser.setAccountBalance(foundUser.getAccountBalance().subtract(fundsTransferRequest.getAmount()));
             User savedUser = userRepository.save(foundUser);
+            EmailDetails emailDetails = EmailDetails.builder()
+                    .recipient(savedUser.getEmail())
+                    .subject("FUNDS TRANSFER")
+                    .message("Congratulations your funds have been transferred." +
+                            "\nYour account details:" +
+                            "\nAccount Name: "+ savedUser.getFirstName() + " " + savedUser.getLastName() + " " + savedUser.getOtherName() +
+                            "\nAccount number: "+ savedUser.getAccountNumber() +
+                            "\nAccountBalance: "+ savedUser.getAccountBalance()
+                    )
+                    .build();
+            emailSenderService.sendEmail(emailDetails);
             return BankResponse.builder()
                     .responseCode(accountUtils.fundsTransferCode)
                     .responseMessage(accountUtils.FundsTransferMessage)
