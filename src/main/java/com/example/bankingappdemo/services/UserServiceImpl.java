@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Objects;
 
 @Service
@@ -106,23 +107,37 @@ public class UserServiceImpl implements UserService{
     @Override
     public BankResponse fundsTransfer(FundsTransferRequest fundsTransferRequest) {
         User foundUser = userRepository.findUserByAccountNumber(fundsTransferRequest.getSourceAccountNumber());
-        if(!Objects.equals(fundsTransferRequest.getSourceAccountNumber(), foundUser.getAccountNumber())){
+        if(foundUser == null){
              return BankResponse.builder()
                     .responseCode(accountUtils.accountExistsCode)
                     .responseMessage(accountUtils.accountExistsMessage)
                     .accountInfo(null)
                     .build();
         }
-        foundUser.setAccountBalance(foundUser.getAccountBalance().subtract( fundsTransferRequest.getAmount()));
-        return BankResponse.builder()
-                .responseCode(accountUtils.accountExistsCode)
-                .responseMessage(accountUtils.accountExistsMessage)
-                .accountInfo(AccountInfo.builder()
-                        .accountNumber(foundUser.getAccountNumber())
-                        .accountName(foundUser.getFirstName() + " " + foundUser.getOtherName() + " " + foundUser.getLastName())
-                        .accountBalance(foundUser.getAccountBalance())
-                        .build())
-                .build();
+        BigInteger availableBal = foundUser.getAccountBalance().toBigInteger();
+        BigInteger amountToTransfer = fundsTransferRequest.getAmount().toBigInteger();
+
+        if(availableBal.intValue() == 0 || amountToTransfer.intValue() > availableBal.intValue() ){
+            return BankResponse.builder()
+                    .responseCode(accountUtils.insufficientFundsCode)
+                    .responseMessage(accountUtils.insufficientFundsMessage)
+                    .accountInfo(null)
+                    .build();
+        }
+        else {
+
+            foundUser.setAccountBalance(foundUser.getAccountBalance().subtract(fundsTransferRequest.getAmount()));
+            User savedUser = userRepository.save(foundUser);
+            return BankResponse.builder()
+                    .responseCode(accountUtils.fundsTransferCode)
+                    .responseMessage(accountUtils.FundsTransferMessage)
+                    .accountInfo(AccountInfo.builder()
+                            .accountNumber(savedUser.getAccountNumber())
+                            .accountName(savedUser.getFirstName() + " " + savedUser.getOtherName() + " " + savedUser.getLastName())
+                            .accountBalance(savedUser.getAccountBalance())
+                            .build())
+                    .build();
+        }
     }
 
     @Override
@@ -145,13 +160,14 @@ public class UserServiceImpl implements UserService{
                     .build();
         }
         foundUser.setAccountBalance(foundUser.getAccountBalance().add(creditDebitRequest.getAmount()));
+        User savedUser = userRepository.save(foundUser);
         return BankResponse.builder()
                 .responseCode(accountUtils.accountCreditCode)
                 .responseMessage(accountUtils.accountCreditMessage)
                 .accountInfo(AccountInfo.builder()
-                        .accountBalance(foundUser.getAccountBalance())
-                        .accountNumber(creditDebitRequest.getAccountNumber())
-                        .accountName(foundUser.getFirstName() + " " + foundUser.getOtherName() + " " + foundUser.getLastName())
+                        .accountBalance(savedUser.getAccountBalance())
+                        .accountNumber(savedUser.getAccountNumber())
+                        .accountName(savedUser.getFirstName() + " " + savedUser.getOtherName() + " " + savedUser.getLastName())
                 .build())
                 .build();
     }
@@ -166,15 +182,29 @@ public class UserServiceImpl implements UserService{
                     .accountInfo(null)
                     .build();
         }
-        foundUser.setAccountBalance(foundUser.getAccountBalance().subtract(creditDebitRequest.getAmount()));
-        return BankResponse.builder()
-                .responseCode(accountUtils.accountCreditCode)
-                .responseMessage(accountUtils.accountCreditMessage)
-                .accountInfo(AccountInfo.builder()
-                        .accountBalance(foundUser.getAccountBalance())
-                        .accountNumber(foundUser.getAccountNumber())
-                        .accountName(foundUser.getFirstName() + " " + foundUser.getOtherName() + " " + foundUser.getLastName())
-                        .build())
-                .build();
+        BigInteger availableBal = foundUser.getAccountBalance().toBigInteger();
+        BigInteger amountToDebit = creditDebitRequest.getAmount().toBigInteger();
+
+        if(availableBal.intValue() == 0 || amountToDebit.intValue() > availableBal.intValue() ){
+            return BankResponse.builder()
+                    .responseCode(accountUtils.insufficientFundsCode)
+                    .responseMessage(accountUtils.insufficientFundsMessage)
+                    .accountInfo(null)
+                    .build();
+        }
+        else {
+            foundUser.setAccountBalance(foundUser.getAccountBalance().subtract(creditDebitRequest.getAmount()));
+            userRepository.save(foundUser);
+
+            return BankResponse.builder()
+                    .responseCode(accountUtils.accountDebitCode)
+                    .responseMessage(accountUtils.accountDebitMessage)
+                    .accountInfo(AccountInfo.builder()
+                            .accountBalance(foundUser.getAccountBalance())
+                            .accountNumber(foundUser.getAccountNumber())
+                            .accountName(foundUser.getFirstName() + " " + foundUser.getOtherName() + " " + foundUser.getLastName())
+                            .build())
+                    .build();
+        }
     }
 }

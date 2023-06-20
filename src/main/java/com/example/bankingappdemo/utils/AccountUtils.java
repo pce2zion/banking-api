@@ -19,6 +19,7 @@ public class AccountUtils {
     public final String accountDebitCode = "006";
 
     public final String fundsTransferCode = "007";
+    public final String insufficientFundsCode = "008";
     public final String accountExistsMessage = "This account already exists";
 
     public final String accountNotExistMessage = "The account does not  exists";
@@ -26,6 +27,7 @@ public class AccountUtils {
     public final String accountFoundSuccess = "The account has been found";
     public final String FundsTransferMessage = "Funds transferred to recipient";
     public final String accountDebitMessage = "Account debited";
+    public final String insufficientFundsMessage = "insufficient funds";
     public final String accountCreditMessage = "Account credited";
     public final String accountCreationMessage = "A new user has been created";
     Random random = new Random();
