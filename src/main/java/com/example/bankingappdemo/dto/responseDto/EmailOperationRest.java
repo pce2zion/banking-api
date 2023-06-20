@@ -5,15 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-
-public class AccountInfo {
-    private String accountName;
-    private BigDecimal accountBalance;
-    private String accountNumber;
+public class EmailOperationRest {
+    private String operationResult;
+    private String operationName;
 }

@@ -1,6 +1,7 @@
 package com.example.bankingappdemo.entity;
 
 import com.example.bankingappdemo.enums.Gender;
+import com.example.bankingappdemo.enums.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,8 +55,8 @@ public class User extends BaseEntity{
     @Column(name = "alt-phoneNumber")
     private String alternativePhoneNumber;
 
-    @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @Column(name = "encrypted-password", nullable = false, unique = true)
     private String encryptedPassword;
